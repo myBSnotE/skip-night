@@ -1,7 +1,7 @@
 # Выполняется автоматически при загрузке датапака (старт сервера, /reload)
 scoreboard objectives add skipnight.enabled dummy
 
-# Если значение ещё не задано (новый мир) — включаем пропуск по умолчанию (как в ванили)
+# Если значение ещё не задано (новый мир) — включаем пропуск по умолчанию
 execute unless score #skipnight skipnight.enabled matches -2147483648..2147483647 run scoreboard players set #skipnight skipnight.enabled 1
 
 # Применяем текущее сохранённое состояние к gamerule

@@ -1,10 +1,6 @@
 {
   "pack": {
-    "pack_format": 81,
-    "supported_formats": {
-      "min_format": 41,
-      "max_format": 200
-    },
+    "pack_format": 48,
     "description": "Переключатель пропуска ночи/грозы (skipnight)"
   }
 }
