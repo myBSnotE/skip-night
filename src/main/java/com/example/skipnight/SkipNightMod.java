@@ -41,15 +41,33 @@ public class SkipNightMod implements ModInitializer {
             Files.createDirectories(datapacksDir);
             Path target = datapacksDir.resolve(DATAPACK_FILE_NAME);
 
+            // К моменту SERVER_STARTING игра уже могла открыть старый
+            // skipnight.zip (например, при проверке списка датапаков мира),
+            // и на Windows прямая перезапись через Files.copy(REPLACE_EXISTING)
+            // падает с FileSystemException, так как файл "занят другим процессом".
+            // Поэтому пишем во временный файл рядом и затем делаем атомарную
+            // замену - Files.move с REPLACE_EXISTING обычно проходит даже
+            // когда у старого файла есть открытый дескриптор на чтение,
+            // в отличие от удаления/перезаписи на месте.
+            Path tmp = datapacksDir.resolve(DATAPACK_FILE_NAME + ".tmp");
+
             try (InputStream in = SkipNightMod.class.getResourceAsStream(DATAPACK_RESOURCE)) {
                 if (in == null) {
                     System.err.println("[SkipNight] Не найден " + DATAPACK_RESOURCE + " внутри jar мода!");
                     return;
                 }
-                // Перезаписываем при каждом старте - так обновление мода
-                // автоматически обновит и сам датапак в старых мирах.
-                Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            try {
+                Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
                 System.out.println("[SkipNight] Датапак установлен: " + target);
+            } catch (IOException moveFailed) {
+                // Файл всё ещё заблокирован - не валим запуск сервера,
+                // просто оставляем старую версию датапака на этот раз.
+                System.err.println("[SkipNight] Не удалось обновить датапак (файл занят), "
+                        + "оставляю предыдущую версию: " + moveFailed.getMessage());
+                Files.deleteIfExists(tmp);
             }
         } catch (IOException e) {
             System.err.println("[SkipNight] Не удалось установить датапак:");
