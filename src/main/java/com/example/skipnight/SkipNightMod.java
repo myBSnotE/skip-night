@@ -77,6 +77,21 @@ public class SkipNightMod implements ModInitializer {
 
     private void ensureEnabled(MinecraftServer server) {
         server.execute(() -> {
+            // Файл уже лежит на диске (installDatapack отработал в SERVER_STARTING),
+            // но для совсем нового мира сервер мог построить список ДОСТУПНЫХ
+            // датапаков (PackRepository) до того, как мы успели туда что-то
+            // дописать - тогда "datapack enable" падает с "Неизвестный набор
+            // данных", потому что сервер ещё не знает о файле.
+            // /reload - тот же механизм, которым игрок пользуется, когда
+            // подкладывает новый датапак в папку на уже запущенном сервере:
+            // он пересканирует папку datapacks и обновляет список доступных
+            // паков, не трогая при этом то, что уже включено.
+            try {
+                server.getCommandManager().executeWithPrefix(server.getCommandSource(), "reload");
+            } catch (Exception e) {
+                System.err.println("[SkipNight] /reload перед включением датапака не сработал: " + e.getMessage());
+            }
+
             String command = "datapack enable \"file/" + DATAPACK_FILE_NAME + "\"";
             try {
                 server.getCommandManager().executeWithPrefix(server.getCommandSource(), command);
